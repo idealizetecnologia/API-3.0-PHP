@@ -30,7 +30,7 @@ class Travel implements \JsonSerializable
 
     public function populate(\stdClass $data)
     {
-        $reflect = new \ReflectionClass($data);
+        $reflect = new \ReflectionObject($data);
         $props   = $reflect->getProperties(\ReflectionProperty::IS_PUBLIC | \ReflectionProperty::IS_PROTECTED | \ReflectionProperty::IS_PRIVATE);
         foreach ($props as $prop) {
             try {
