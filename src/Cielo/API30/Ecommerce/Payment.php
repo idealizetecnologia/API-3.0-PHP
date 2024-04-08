@@ -203,7 +203,7 @@ class Payment implements \JsonSerializable
         $this->instructions   = isset($data->Instructions) ? $data->Instructions : null;
 
         $this->pixQrCode = isset($data->QrCodeString) ? $data->QrCodeString : null;
-        $this->pixQrCodeBase64 = isset($data->QrcodeBase64Image) ? $data->QrcodeBase64Image : null;
+        $this->pixQrCodeBase64 = isset($data->QrCodeBase64Image) ? $data->QrCodeBase64Image : null;
     }
 
     /**
