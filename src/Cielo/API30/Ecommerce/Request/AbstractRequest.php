@@ -120,6 +120,8 @@ abstract class AbstractRequest
                 throw $exception;
             case 404:
                 throw new CieloRequestException('Resource not found', 404, null);
+            case 401:
+                throw new CieloRequestException('Access denied', 401, null);
             default:
                 throw new CieloRequestException('Unknown status', $statusCode);
         }
