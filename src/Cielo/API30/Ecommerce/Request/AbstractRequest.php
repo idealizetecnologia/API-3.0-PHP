@@ -110,6 +110,19 @@ abstract class AbstractRequest
             case 400:
                 $exception = null;
                 $response  = json_decode($responseBody);
+                // Se ainda não for um array, trata como erro genérico
+                if (json_last_error() !== JSON_ERROR_NONE || !is_array($response)) {
+                    $message = is_string($responseBody) ? $responseBody : 'Erro desconhecido';
+                    $cieloError = new CieloError($message, '400');
+                    $exception  = new CieloRequestException('Request Error :' . $message, $statusCode);
+                    $exception->setCieloError($cieloError);
+                    throw $exception;
+                }
+
+                // Se for objeto, transforma em array para iterar
+                if (is_object($response)) {
+                    $response = [$response];
+                }
 
                 foreach ($response as $error) {
                     $cieloError = new CieloError($error->Message, $error->Code);
