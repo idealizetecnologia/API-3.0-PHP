@@ -118,12 +118,39 @@ abstract class AbstractRequest
                 }
 
                 throw $exception;
-            case 404:
-                throw new CieloRequestException('Resource not found', 404, null);
             case 401:
                 throw new CieloRequestException('Access denied', 401, null);
+            case 403:
+                throw new CieloRequestException('Forbidden: você não tem permissão para acessar este recurso.', 403, null);
+            case 404:
+                throw new CieloRequestException('Resource not found', 404, null);
+            case 409:
+                throw new CieloRequestException('Conflict: recurso em conflito, verifique se já existe ou se há duplicidade.', 409, null);
+            case 422:
+                throw new CieloRequestException('Unprocessable Entity: erro de validação dos dados enviados.', 422, null);
+            case 429:
+                throw new CieloRequestException('Too Many Requests: limite de requisições excedido, tente novamente mais tarde.', 429, null);
+            case 500:
+                throw new CieloRequestException('Internal Server Error: erro interno no servidor da Cielo.', 500, null);
+            case 502:
+                throw new CieloRequestException('Bad Gateway: erro de comunicação com o gateway da Cielo.', 502, null);
+            case 503:
+                throw new CieloRequestException('Service Unavailable: serviço temporariamente indisponível.', 503, null);
+            case 504:
+                throw new CieloRequestException('Gateway Timeout: tempo de resposta excedido.', 504, null);
             default:
-                throw new CieloRequestException('Unknown status', $statusCode);
+                $message = 'Unknown status';
+                if (!empty($responseBody)) {
+                    $decoded = json_decode($responseBody);
+                    if (is_array($decoded) && isset($decoded[0]->Message)) {
+                        $message = $decoded[0]->Message;
+                    } elseif (is_object($decoded) && isset($decoded->Message)) {
+                        $message = $decoded->Message;
+                    } elseif (is_string($responseBody)) {
+                        $message = $responseBody;
+                    }
+                }
+                throw new CieloRequestException("Erro desconhecido. Status code: $statusCode. Mensagem: $message", $statusCode);
         }
 
         return $unserialized;
