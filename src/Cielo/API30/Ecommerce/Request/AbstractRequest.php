@@ -111,10 +111,11 @@ abstract class AbstractRequest
                 $exception = null;
                 $response  = json_decode($responseBody);
                 if (json_last_error() !== JSON_ERROR_NONE || !is_array($response)) {
-                    $mensagemErro = is_string($responseBody) ? $responseBody : 'Resposta da API não está em formato JSON válido ou não é um array de erros.';
-                    $cieloError = new CieloError($mensagemErro, '400');
+                    $response = is_string($response) ? json_decode($response) : null;
+                    $messageError = $response[0]?->Message ?: "Resposta da API não está em formato JSON válido ou não é um array de erros.";
+                    $cieloError = new CieloError($messageError, '400');
                     $exception  = new CieloRequestException(
-                        'Erro 400: resposta inesperada da API. ' . $mensagemErro,
+                        'Erro 400: resposta inesperada da API. ' . $messageError,
                         $statusCode
                     );
                     $exception->setCieloError($cieloError);
