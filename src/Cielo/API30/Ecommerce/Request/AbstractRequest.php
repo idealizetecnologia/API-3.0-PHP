@@ -110,16 +110,17 @@ abstract class AbstractRequest
             case 400:
                 $exception = null;
                 $response  = json_decode($responseBody);
-                // Se ainda não for um array, trata como erro genérico
                 if (json_last_error() !== JSON_ERROR_NONE || !is_array($response)) {
-                    $message = is_string($responseBody) ? $responseBody : 'Erro desconhecido';
-                    $cieloError = new CieloError($message, '400');
-                    $exception  = new CieloRequestException('Request Error :' . $message, $statusCode);
+                    $mensagemErro = is_string($responseBody) ? $responseBody : 'Resposta da API não está em formato JSON válido ou não é um array de erros.';
+                    $cieloError = new CieloError($mensagemErro, '400');
+                    $exception  = new CieloRequestException(
+                        'Erro 400: resposta inesperada da API. ' . $mensagemErro,
+                        $statusCode
+                    );
                     $exception->setCieloError($cieloError);
                     throw $exception;
                 }
 
-                // Se for objeto, transforma em array para iterar
                 if (is_object($response)) {
                     $response = [$response];
                 }
@@ -152,7 +153,7 @@ abstract class AbstractRequest
             case 504:
                 throw new CieloRequestException('Gateway Timeout: tempo de resposta excedido.', 504, null);
             default:
-                $message = 'Unknown status';
+                $message = 'Nenhum tratamento específico para este status.';
                 if (!empty($responseBody)) {
                     $decoded = json_decode($responseBody);
                     if (is_array($decoded) && isset($decoded[0]->Message)) {
@@ -163,7 +164,10 @@ abstract class AbstractRequest
                         $message = $responseBody;
                     }
                 }
-                throw new CieloRequestException("Erro desconhecido. Status code: $statusCode. Mensagem: $message", $statusCode);
+                throw new CieloRequestException(
+                    "Status HTTP não tratado explicitamente ($statusCode). Resposta da API: $message",
+                    $statusCode
+                );
         }
 
         return $unserialized;
