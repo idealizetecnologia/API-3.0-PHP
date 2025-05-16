@@ -110,6 +110,21 @@ abstract class AbstractRequest
             case 400:
                 $exception = null;
                 $response  = json_decode($responseBody);
+                if (json_last_error() !== JSON_ERROR_NONE || !is_array($response)) {
+                    $response = is_string($response) ? json_decode($response) : null;
+                    $messageError = $response[0]?->Message ?: "Resposta da API não está em formato JSON válido ou não é um array de erros.";
+                    $cieloError = new CieloError($messageError, '400');
+                    $exception  = new CieloRequestException(
+                        'Erro 400: resposta inesperada da API. ' . $messageError,
+                        $statusCode
+                    );
+                    $exception->setCieloError($cieloError);
+                    throw $exception;
+                }
+
+                if (is_object($response)) {
+                    $response = [$response];
+                }
 
                 foreach ($response as $error) {
                     $cieloError = new CieloError($error->Message, $error->Code);
@@ -118,10 +133,42 @@ abstract class AbstractRequest
                 }
 
                 throw $exception;
+            case 401:
+                throw new CieloRequestException('Access denied', 401, null);
+            case 403:
+                throw new CieloRequestException('Forbidden: você não tem permissão para acessar este recurso.', 403, null);
             case 404:
                 throw new CieloRequestException('Resource not found', 404, null);
+            case 409:
+                throw new CieloRequestException('Conflict: recurso em conflito, verifique se já existe ou se há duplicidade.', 409, null);
+            case 422:
+                throw new CieloRequestException('Unprocessable Entity: erro de validação dos dados enviados.', 422, null);
+            case 429:
+                throw new CieloRequestException('Too Many Requests: limite de requisições excedido, tente novamente mais tarde.', 429, null);
+            case 500:
+                throw new CieloRequestException('Internal Server Error: erro interno no servidor da Cielo.', 500, null);
+            case 502:
+                throw new CieloRequestException('Bad Gateway: erro de comunicação com o gateway da Cielo.', 502, null);
+            case 503:
+                throw new CieloRequestException('Service Unavailable: serviço temporariamente indisponível.', 503, null);
+            case 504:
+                throw new CieloRequestException('Gateway Timeout: tempo de resposta excedido.', 504, null);
             default:
-                throw new CieloRequestException('Unknown status', $statusCode);
+                $message = 'Nenhum tratamento específico para este status.';
+                if (!empty($responseBody)) {
+                    $decoded = json_decode($responseBody);
+                    if (is_array($decoded) && isset($decoded[0]->Message)) {
+                        $message = $decoded[0]->Message;
+                    } elseif (is_object($decoded) && isset($decoded->Message)) {
+                        $message = $decoded->Message;
+                    } elseif (is_string($responseBody)) {
+                        $message = $responseBody;
+                    }
+                }
+                throw new CieloRequestException(
+                    "Status HTTP não tratado explicitamente ($statusCode). Resposta da API: $message",
+                    $statusCode
+                );
         }
 
         return $unserialized;
